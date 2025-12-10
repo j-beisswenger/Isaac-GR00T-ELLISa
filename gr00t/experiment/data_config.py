@@ -325,6 +325,62 @@ class UnitreeG1DataConfig(BaseDataConfig):
         return ComposedModalityTransform(transforms=transforms)
 
 
+class UnitreeCustomG1DataConfig(BaseDataConfig):
+    video_keys = ["video.cam_right_high"]
+    state_keys = ["state.left_arm", "state.right_arm", "state.left_hand", "state.right_hand"]
+    action_keys = ["action.left_arm", "action.right_arm", "action.left_hand", "action.right_hand"]
+    language_keys = ["annotation.human.task_description"]
+    observation_indices = [0]
+    action_indices = list(range(16))
+
+    def transform(self) -> ModalityTransform:
+        transforms = [
+            # video transforms
+            VideoToTensor(apply_to=self.video_keys, backend="torchvision"),
+            VideoCrop(apply_to=self.video_keys, scale=0.95, backend="torchvision"),
+            VideoResize(apply_to=self.video_keys, height=224, width=224, interpolation="linear", backend="torchvision"),
+            VideoColorJitter(
+                apply_to=self.video_keys,
+                brightness=0.3,
+                contrast=0.4,
+                saturation=0.5,
+                hue=0.08,
+                backend="torchvision"
+            ),
+            VideoToNumpy(apply_to=self.video_keys),
+
+            # state transforms
+            StateActionToTensor(apply_to=self.state_keys),
+            StateActionTransform(
+                apply_to=self.state_keys,
+                normalization_modes={key: "min_max" for key in self.state_keys},
+            ),
+
+            # action transforms
+            StateActionToTensor(apply_to=self.action_keys),
+            StateActionTransform(
+                apply_to=self.action_keys,
+                normalization_modes={key: "min_max" for key in self.action_keys},
+            ),
+
+            # concat transforms
+            ConcatTransform(
+                video_concat_order=self.video_keys,
+                state_concat_order=self.state_keys,
+                action_concat_order=self.action_keys,
+            ),
+            
+            # model-specific transform
+            GR00TTransform(
+                state_horizon=len(self.observation_indices),
+                action_horizon=len(self.action_indices),
+                max_state_dim=64,
+                max_action_dim=32,
+            ),
+        ]
+        return ComposedModalityTransform(transforms=transforms)
+
+
 class UnitreeG1FullBodyDataConfig(UnitreeG1DataConfig):
     video_keys = ["video.rs_view"]
     state_keys = [
@@ -782,6 +838,7 @@ DATA_CONFIG_MAP = {
     "so100": So100DataConfig(),
     "so100_dualcam": So100DualCamDataConfig(),
     "unitree_g1": UnitreeG1DataConfig(),
+    "unitree_custom_g1": UnitreeCustomG1DataConfig(),
     "unitree_g1_full_body": UnitreeG1FullBodyDataConfig(),
     "oxe_droid": OxeDroidDataConfig(),
     "agibot_genie1": AgibotGenie1DataConfig(),

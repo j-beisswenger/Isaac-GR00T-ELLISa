@@ -53,9 +53,7 @@ def calc_mse_for_single_trajectory(
         data_point = None
         if plot_state:
             data_point = dataset.get_step_data(traj_id, step_count)
-            concat_state = np.concatenate(
-                [data_point[f"state.{key}"][0] for key in modality_keys], axis=0
-            )
+            concat_state = np.concatenate([data_point[f"state.{key}"][0] for key in modality_keys], axis=0)
             state_joints_across_time.append(concat_state)
 
         if step_count % action_horizon == 0:
@@ -73,9 +71,7 @@ def calc_mse_for_single_trajectory(
                 )
                 pred_action_across_time.append(concat_pred_action)
 
-                concat_gt_action = np.concatenate(
-                    [data_point[f"action.{key}"][j] for key in modality_keys], axis=0
-                )
+                concat_gt_action = np.concatenate([data_point[f"action.{key}"][j] for key in modality_keys], axis=0)
                 gt_action_across_time.append(concat_gt_action)
 
     # plot the joints
@@ -149,7 +145,9 @@ def plot_trajectory(
     modality_string = ""
     for key in modality_keys:
         modality_string += key + "\n " if len(modality_string) > 40 else key + ", "
-    title_text = f"Trajectory Analysis - ID: {traj_id}\nModalities: {modality_string[:-2]}\nUnnormalized MSE: {mse:.6f}"
+    title_text = (
+        f"Trajectory Analysis - ID: {traj_id}\nModalities: {modality_string[:-2]}\nUnnormalized MSE: {mse:.6f}"
+    )
 
     fig.suptitle(title_text, fontsize=14, fontweight="bold", color="#2E86AB", y=0.95)
 

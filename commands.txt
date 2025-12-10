@@ -1,0 +1,19 @@
+# Offline evaluation: 
+
+python scripts/eval_policy.py --plot \
+   --embodiment_tag new_embodiment \
+   --model_path unitree_g1/output/model/path/checkpoint-3000 \
+   --data_config unitree_custom_g1 \
+   --dataset_path ../datasets/G1_Dex3_BlockStacking_Dataset/ \
+   --video_backend torchvision_av \
+   --modality_keys left_arm right_arm \
+   --save_plot_path unitree_g1/output/model/path/checkpoint-3000/eval
+
+# Deployment:
+python scripts/inference_service.py --server \
+    --model_path unitree_g1/output/model/path/checkpoint-3000 \
+    --embodiment-tag new_embodiment \
+    --data-config unitree_custom_g1 \
+    --denoising-steps 4
+
+python unitree_g1/deployment_client.py
