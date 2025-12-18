@@ -100,14 +100,8 @@ def import_external_data_config(data_config_str: str) -> Optional[BaseDataConfig
 
         module = importlib.import_module(module_path)
         if not hasattr(module, class_name):
-            available = [
-                n
-                for n in dir(module)
-                if not n.startswith("_") and isinstance(getattr(module, n), type)
-            ]
-            raise AttributeError(
-                f"Class '{class_name}' not found in '{module_path}'. Available: {available}"
-            )
+            available = [n for n in dir(module) if not n.startswith("_") and isinstance(getattr(module, n), type)]
+            raise AttributeError(f"Class '{class_name}' not found in '{module_path}'. Available: {available}")
 
         # assert if the class has 'transform' and 'modality_config' methods
         if not hasattr(getattr(module, class_name), "transform"):
@@ -327,8 +321,8 @@ class UnitreeG1DataConfig(BaseDataConfig):
 
 class UnitreeCustomG1DataConfig(BaseDataConfig):
     video_keys = ["video.cam_right_high"]
-    state_keys = ["state.left_arm", "state.right_arm", "state.left_hand", "state.right_hand"]
-    action_keys = ["action.left_arm", "action.right_arm", "action.left_hand", "action.right_hand"]
+    state_keys = ["state.left_arm", "state.right_arm", "state.left_hand", "state.right_hand"]  #
+    action_keys = ["action.left_arm", "action.right_arm", "action.left_hand", "action.right_hand"]  #
     language_keys = ["annotation.human.task_description"]
     observation_indices = [0]
     action_indices = list(range(16))
@@ -338,38 +332,36 @@ class UnitreeCustomG1DataConfig(BaseDataConfig):
             # video transforms
             VideoToTensor(apply_to=self.video_keys, backend="torchvision"),
             VideoCrop(apply_to=self.video_keys, scale=0.95, backend="torchvision"),
-            VideoResize(apply_to=self.video_keys, height=224, width=224, interpolation="linear", backend="torchvision"),
+            VideoResize(
+                apply_to=self.video_keys, height=224, width=224, interpolation="linear", backend="torchvision"
+            ),
             VideoColorJitter(
                 apply_to=self.video_keys,
                 brightness=0.3,
                 contrast=0.4,
                 saturation=0.5,
                 hue=0.08,
-                backend="torchvision"
+                backend="torchvision",
             ),
             VideoToNumpy(apply_to=self.video_keys),
-
             # state transforms
             StateActionToTensor(apply_to=self.state_keys),
             StateActionTransform(
                 apply_to=self.state_keys,
                 normalization_modes={key: "min_max" for key in self.state_keys},
             ),
-
             # action transforms
             StateActionToTensor(apply_to=self.action_keys),
             StateActionTransform(
                 apply_to=self.action_keys,
                 normalization_modes={key: "min_max" for key in self.action_keys},
             ),
-
             # concat transforms
             ConcatTransform(
                 video_concat_order=self.video_keys,
                 state_concat_order=self.state_keys,
                 action_concat_order=self.action_keys,
             ),
-            
             # model-specific transform
             GR00TTransform(
                 state_horizon=len(self.observation_indices),
